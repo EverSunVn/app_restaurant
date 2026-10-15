@@ -1,0 +1,16 @@
+{
+  "dishes": {
+    "PhoBo": {"name": "Phở bò", "cost": 20000},
+    "ComTam": {"name": "Cơm tấm", "cost": 30000},
+    "TraDa": {"name": "Trà đá", "cost": 10000},
+    "TraDao": {"name": "Trà đào", "cost": 10000},
+    "ComChienDuongChau": {"name":"Cơm chiên dương châu", "cost": 25000}
+  },
+  "tables": {
+    "1": {"state": true},
+    "2": {"state": true},
+    "3": {"state": true},
+    "4": {"state": true},
+    "5": {"state": true}
+  }
+}
