@@ -1,29 +1,29 @@
 from ..models import base_models as BaseModel
 
-def logic_lay_danh_sach_mon():
-    """Trả về toàn bộ dictionary món ăn"""
+def logic_get_all_dishes():
+    """Return the entire dictionary of dishes"""
     return BaseModel.DISHES_DATA
 
-def logic_them_mon(dish_id, name, cost):
-    """Thêm món mới vào thực đơn"""
-    # Ép kiểu dish_id về string nếu file json lưu key là string
+def logic_add_dish(dish_id, name, cost):
+    """Add a new dish to the menu"""
+    # Convert dish_id to string in case the JSON keys are strings
     dish_id = str(dish_id) 
     
     if dish_id in BaseModel.DISHES_DATA:
-        return False, f"Mã món '{dish_id}' đã tồn tại!"
+        return False, f"Dish ID '{dish_id}' already exists!"
     
     if cost < 0:
-        return False, "Giá tiền không hợp lệ!"
+        return False, "Invalid price!"
 
     BaseModel.DISHES_DATA[dish_id] = BaseModel.Dishes(name, cost)
-    return True, f"Đã thêm món '{name}' thành công!"
+    return True, f"Successfully added dish '{name}'!"
 
-def logic_sua_mon(dish_id, new_name=None, new_cost=None):
-    """Sửa thông tin món ăn"""
+def logic_update_dish(dish_id, new_name=None, new_cost=None):
+    """Update dish information"""
     dish_id = str(dish_id)
     
     if dish_id not in BaseModel.DISHES_DATA:
-        return False, "Món ăn không tồn tại!"
+        return False, "Dish does not exist!"
         
     dish = BaseModel.DISHES_DATA[dish_id]
     
@@ -31,17 +31,17 @@ def logic_sua_mon(dish_id, new_name=None, new_cost=None):
         dish.name = new_name
     if new_cost is not None:
         if new_cost < 0:
-            return False, "Giá tiền không hợp lệ!"
+            return False, "Invalid price!"
         dish.cost = new_cost
         
-    return True, "Cập nhật món ăn thành công!"
+    return True, "Successfully updated dish!"
 
-def logic_xoa_mon(dish_id):
-    """Xóa món ăn khỏi thực đơn"""
+def logic_delete_dish(dish_id):
+    """Remove a dish from the menu"""
     dish_id = str(dish_id)
     
     if dish_id in BaseModel.DISHES_DATA:
         dish = BaseModel.DISHES_DATA.pop(dish_id)
-        return True, f"Đã xóa món '{dish.name}'!"
+        return True, f"Successfully removed dish '{dish.name}'!"
         
-    return False, "Món ăn không tồn tại!"
+    return False, "Dish does not exist!"
