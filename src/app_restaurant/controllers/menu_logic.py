@@ -1,3 +1,4 @@
+from ..models import base_models as BaseModel
 
 def logic_get_all_dishes():
     """Return the entire dictionary of dishes"""
@@ -44,4 +45,4 @@ def logic_delete_dish(dish_id):
         return True, f"Successfully removed dish '{dish.name}'!"
         
     return False, "Dish does not exist!"
-# sckjwdbvkjdsbv
+
