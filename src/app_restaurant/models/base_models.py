@@ -12,12 +12,9 @@ class Dishes:
         
 
 class Table:
-    _idcounter = 1
     def __init__(self, table_number ,state):
         self._table_number = table_number
         self.state = state
-        self.id = Table._idcounter
-        Table._idcounter += 1
 
     # ====================================
 
@@ -27,15 +24,16 @@ class Table:
 
     @table_number.setter
     def table_number(self, value):
-        if not 1<=value<=5:
-            raise ValueError("Table number must be between 1 - 5")
+        if not value<=0:
+            raise ValueError("Table number must be greater than 0")
+        self._table_number = value
         
      # ====================================
 
 
 class Bill:
-    def __init__(self, table_id):
-        self.id = table_id
+    def __init__(self, table_number):
+        self.id = table_number
         self.dishes_list = []
         self.total_money = 0
 
@@ -105,10 +103,10 @@ def close_table(table_number): # Đóng bàn
         table.state = True
         
     if table.id in BILL_DATA:
-        del BILL_DATA[id]
+        del BILL_DATA[table_number]
 
-def get_bill(table_id): # Lấy Bill
-    if table_id not in BILL_DATA:
-        BILL_DATA[table_id] = Bill(table_id)
+def get_bill(table_number): # Lấy Bill
+    if table_number not in BILL_DATA:
+        BILL_DATA[table_number] = Bill(table_number)
 
-    return BILL_DATA[table_id]
+    return BILL_DATA[table_number]

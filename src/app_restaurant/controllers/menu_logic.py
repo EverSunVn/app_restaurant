@@ -1,4 +1,3 @@
-from ..models import base_models as BaseModel
 
 def logic_get_all_dishes():
     """Return the entire dictionary of dishes"""
