@@ -1,54 +1,70 @@
 import streamlit as st
-from controllers import orders_logic
-from models import base_models as BaseModel
+from app_restaurant.models.base_models import DISHES_DATA
+from app_restaurant.controllers.tables_logic import get_table_layout
+from app_restaurant.controllers.orders_logic import process_order, undo_process, get_bill_details
 
-def render_orders():
-    st.markdown("### 🛒 Đơn hàng & Gọi món")
-    selected_table = st.session_state.get("selected_table")
-    
-    if not selected_table:
-        st.info("💡 Vui lòng lựa chọn một Bàn ăn ở cột Sơ đồ Bàn để thực hiện gọi món.")
+# ... (phần code def render_orders_view() giữ nguyên)
+def render_orders_view():
+    st.header("📝 Gọi Món & Quản Lý Đơn Hàng")
+
+    # Lấy danh sách bàn đang phục vụ (occupied_tables)
+    _, occupied_tables = get_table_layout()
+
+    if not occupied_tables:
+        st.info("Hiện không có bàn nào đang được mở. Vui lòng sang tab 'Sơ đồ Bàn' để mở bàn trước.")
         return
 
-    st.markdown(f"🎯 **Đang thực hiện cho: Bàn {selected_table}**")
-    
-    # 1. Khu vực hiển thị thực đơn gọi món nhanh
-    st.write("**Chọn món để thêm vào bàn:**")
-    dishes = BaseModel.DISHES_DATA
-    
-    if not dishes:
-        st.warning("Thực đơn trống! Hãy tạo món ăn trong tab Quản lý thực đơn trước.")
-    else:
-        for dish_id, dish in dishes.items():
-            c_name, c_action = st.columns(2)
-            c_name.write(f"▪️ {dish.name} (`{dish.cost:,}` VNĐ)")
-            if c_action.button("➕ Thêm", key=f"add_{dish_id}_{selected_table}"):
-                success, msg = orders_logic.process_order(selected_table, dish_id)
+    # Chọn bàn thao tác
+    selected_table = st.selectbox(
+        "Chọn bàn cần gọi món:",
+        options=occupied_tables,
+        format_func=lambda x: f"Bàn số {x}"
+    )
+
+    st.markdown("---")
+    col_left, col_right = st.columns([1, 1])
+
+    # CỘT TẠO ĐƠN (GỌI MÓN)
+    with col_left:
+        st.subheader("🛒 Chọn Món Bổ Sung")
+        if not DISHES_DATA:
+            st.warning("Menu hiện chưa có món nào!")
+        else:
+            dish_id = st.selectbox(
+                "Thực đơn món ăn:",
+                options=list(DISHES_DATA.keys()),
+                format_func=lambda k: f"{DISHES_DATA[k].name} - {DISHES_DATA[k].cost:,} VNĐ"
+            )
+
+            if st.button("➕ Thêm vào đơn hàng", use_container_width=True, type="primary"):
+                success, msg = process_order(selected_table, dish_id)
                 if success:
                     st.success(msg)
                     st.rerun()
                 else:
                     st.error(msg)
 
-    st.markdown("---")
-    
-    # 2. Khu vực hiển thị Hóa đơn tạm tính hiện tại & Stack Undo
-    st.write("🧾 **Danh sách món đã chọn (Tạm tính):**")
-    dishes_list, total_money = orders_logic.get_bill_details(selected_table)
-    
-    if dishes_list:
-        for idx, item in enumerate(dishes_list):
-            st.text(f" {idx + 1}. {item.name} - {item.cost:,} VNĐ")
-            
-        st.markdown(f"💵 **Tổng tiền tạm tính:** `{total_money:,}` VNĐ")
-        
-        # Nút bấm Hoàn tác (Undo món ăn cuối cùng sử dụng cấu trúc dữ liệu Stack trong backend)
-        if st.button("↩️ Hoàn tác (Undo)", key=f"undo_{selected_table}", type="secondary", use_container_width=True):
-            success, msg = orders_logic.undo_process(selected_table)
-            if success:
-                st.success(msg)
-                st.rerun()
-            else:
-                st.error(msg)
-    else:
-        st.caption("Chưa có món ăn nào được gọi cho bàn này.")
+    # CỘT HÓA ĐƠN TẠM TÍNH & NÚT UNDO
+    with col_right:
+        st.subheader(f"🧾 Danh Sách Món - Bàn {selected_table}")
+        dishes_list, total_money = get_bill_details(selected_table)
+
+        if dishes_list:
+            # Hiển thị danh sách món ăn đã gọi
+            items_display = [
+                {"STT": idx + 1, "Món ăn": d.name, "Giá": f"{d.cost:,} VNĐ"}
+                for idx, d in enumerate(dishes_list)
+            ]
+            st.table(items_display)
+            st.markdown(f"### 💰 **Tổng tạm tính:** `{total_money:,}` VNĐ")
+
+            # Nút Undo (Rút món vừa chọn khỏi Stack)
+            if st.button("⏪ Undo (Xóa món vừa thêm gần nhất)", use_container_width=True):
+                success, msg = undo_process(selected_table)
+                if success:
+                    st.warning(msg)
+                    st.rerun()
+                else:
+                    st.error(msg)
+        else:
+            st.caption("Bàn này chưa gọi món nào.")

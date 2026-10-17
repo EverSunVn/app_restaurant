@@ -1,62 +1,40 @@
 import streamlit as st
-from controllers import tables_logic
+from app_restaurant.models.base_models import TABLE_DATA
+from app_restaurant.controllers.tables_logic import get_table_layout, logic_open_table, logic_close_table
 
-def render_tables():
-    st.markdown("### 🗺️ Sơ đồ Bàn")
-    
-    # Lấy danh sách bàn trống và bàn đang có người từ backend logic
-    empty_tables, occupied_tables = tables_logic.get_table_layout()
-    all_tables = sorted(list(empty_tables) + list(occupied_tables))
-    
-    if not all_tables:
-        st.info("Không tìm thấy dữ liệu bàn ăn.")
-        return
+# ... (phần code def render_tables_view() giữ nguyên)
+def render_tables_view():
+    st.header("🪑 Sơ Đồ Bàn Ăn")
 
-    # Hiển thị lưới danh sách bàn ăn (chia làm 3 cột hiển thị)
-    cols = st.columns(3)
-    for i, t_num in enumerate(all_tables):
-        is_empty = t_num in empty_tables
-        color_icon = "🟢" if is_empty else "🔴"
-        status_text = "Trống" if is_empty else "Phục vụ"
-        
-        # Nhãn hiển thị trạng thái bàn ăn
-        label = f"{color_icon} Bàn {t_num}\n({status_text})"
-        
-        # Đánh dấu sao nếu bàn đó đang được click chọn hiện tại
-        if st.session_state.get("selected_table") == t_num:
-            label = f"⭐ {label}"
-            
-        with cols[i % 3]:
-            if st.button(label, key=f"btn_table_{t_num}", use_container_width=True):
-                st.session_state.selected_table = t_num
-                st.rerun()
+    empty_tables, occupied_tables = get_table_layout()
+
+    col_note1, col_note2, _ = st.columns([1, 1, 3])
+    with col_note1:
+        st.caption("🟢 **Bàn trống**")
+    with col_note2:
+        st.caption("🔴 **Đang phục vụ**")
 
     st.markdown("---")
-    
-    # Khu vực thao tác Mở/Đóng nhanh trạng thái bàn ăn đang chọn
-    selected = st.session_state.get("selected_table")
-    if selected:
-        st.write(f"👉 **Bàn đang tương tác: Bàn {selected}**")
-        c1, c2 = st.columns(2)
-        
-        with c1:
-            if selected in empty_tables:
-                if st.button("🚀 Mở bàn phục vụ", key="open_table_btn", type="primary", use_container_width=True):
-                    table, msg = tables_logic.logic_open_table(selected)
-                    if table:
+
+    cols = st.columns(3)
+    for idx, (table_num, table) in enumerate(TABLE_DATA.items()):
+        col = cols[idx % 3]
+        is_free = table.state # True là bàn trống
+        status_color = "🟢" if is_free else "🔴"
+        status_text = "Bàn trống" if is_free else "Đang phục vụ"
+
+        with col:
+            with st.container(border=True):
+                st.subheader(f"{status_color} Bàn số {table.table_number}")
+                st.write(f"Trạng thái: **{status_text}**")
+
+                if is_free:
+                    if st.button(f"Mở Bàn {table.table_number}", key=f"open_{table_num}", use_container_width=True):
+                        _, msg = logic_open_table(table_num)
                         st.success(msg)
-                    else:
-                        st.error(msg)
-                    st.rerun()
-                    
-        with c2:
-            if selected in occupied_tables:
-                if st.button("🗑️ Đóng / Hủy bàn", key="close_table_btn", type="secondary", use_container_width=True):
-                    success, msg = tables_logic.logic_close_table(selected)
-                    if success:
-                        st.success(msg)
-                        if st.session_state.selected_table == selected:
-                            st.session_state.selected_table = None
-                    else:
-                        st.error(msg)
-                    st.rerun()
+                        st.rerun()
+                else:
+                    if st.button(f"Đóng / Hủy Bàn {table.table_number}", key=f"close_{table_num}", use_container_width=True):
+                        _, msg = logic_close_table(table_num)
+                        st.info(msg)
+                        st.rerun()

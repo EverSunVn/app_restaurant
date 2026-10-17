@@ -1,74 +1,47 @@
 import streamlit as st
-from controllers import menu_logic
+from app_restaurant.controllers.menu_logic import logic_get_all_dishes, logic_add_dish, logic_delete_dish
 
-def render_menu_management():
-    st.markdown("### 📋 Quản lý Thực đơn (Menu)")
-    
-    # Lấy toàn bộ danh sách món ăn hiện tại
-    dishes = menu_logic.logic_get_all_dishes()
-    
-    # Hiển thị bảng danh mục món ăn hiện tại
-    st.write("**Thực đơn hiện tại của nhà hàng:**")
-    menu_data = []
-    for dish_id, dish in dishes.items():
-        menu_data.append({"Mã món": dish_id, "Tên món": dish.name, "Giá tiền (VNĐ)": f"{dish.cost:,}"})
-        
-    if menu_data:
-        st.dataframe(menu_data, use_container_width=True, hide_index=True)
-    else:
-        st.info("Thực đơn trống. Vui lòng thêm món ăn mới!")
+# ... (phần code def render_menu_view() giữ nguyên)
+def render_menu_view():
+    st.header("📜 Quản Lý Thực Đơn")
 
-    # Các Tab phân chia chức năng Thêm / Sửa / Xóa món ăn
-    tab_add, tab_edit, tab_delete = st.tabs(["➕ Thêm món", "✏️ Sửa món", "❌ Xóa món"])
-    
-    with tab_add:
-        with st.form("form_add_dish", clear_on_submit=True):
-            new_id = st.text_input("Nhập mã món ăn (VD: BunCha)")
-            new_name = st.text_input("Nhập tên món ăn")
-            new_cost = st.number_input("Nhập giá tiền", min_value=0, step=5000, value=0)
-            
-            if st.form_submit_button("Xác nhận thêm"):
-                if not new_id or not new_name:
-                    st.error("Vui lòng không bỏ trống mã món và tên món!")
-                else:
-                    success, msg = menu_logic.logic_add_dish(new_id, new_name, new_cost)
-                    if success:
-                        st.success(msg)
-                        st.rerun()
-                    else:
-                        st.error(msg)
+    tab1, tab2 = st.tabs(["📋 Danh Sách Món", "➕ Thêm / Xóa Món"])
+    dishes_data = logic_get_all_dishes()
 
-    with tab_edit:
-        if dishes:
-            with st.form("form_update_dish"):
-                edit_id = st.selectbox("Chọn mã món cần chỉnh sửa", list(dishes.keys()))
-                edit_name = st.text_input("Tên món mới (Để trống nếu giữ nguyên)")
-                edit_cost = st.number_input("Giá tiền mới", min_value=0, step=5000, value=int(dishes[edit_id].cost))
-                
-                if st.form_submit_button("Cập nhật món"):
-                    success, msg = menu_logic.logic_update_dish(
-                        edit_id, 
-                        new_name=edit_name if edit_name else None, 
-                        new_cost=edit_cost
-                    )
-                    if success:
-                        st.success(msg)
-                        st.rerun()
-                    else:
-                        st.error(msg)
+    with tab1:
+        table_data = [
+            {"Mã món": dish_id, "Tên món": dish.name, "Giá": f"{dish.cost:,} VNĐ"}
+            for dish_id, dish in dishes_data.items()
+        ]
+        if table_data:
+            st.dataframe(table_data, use_container_width=True)
         else:
-            st.caption("Không có món ăn nào để chỉnh sửa.")
+            st.info("Thực đơn đang trống.")
 
-    with tab_delete:
-        if dishes:
-            with st.form("form_delete_dish"):
-                del_id = st.selectbox("Chọn món ăn muốn gỡ bỏ", list(dishes.keys()), key="sb_del")
-                if st.form_submit_button("Xác nhận xóa món", type="primary"):
-                    success, msg = menu_logic.logic_delete_dish(del_id)
-                    if success:
+    with tab2:
+        col_add, col_del = st.columns(2)
+        with col_add:
+            st.subheader("Thêm Món Mới")
+            with st.form("add_dish_form", clear_on_submit=True):
+                d_id = st.text_input("Mã món (VD: 101)")
+                d_name = st.text_input("Tên món")
+                d_cost = st.number_input("Giá tiền (VNĐ)", min_value=0, step=1000, value=30000)
+                if st.form_submit_button("Thêm Món"):
+                    ok, msg = logic_add_dish(d_id, d_name, int(d_cost))
+                    if ok:
                         st.success(msg)
                         st.rerun()
                     else:
                         st.error(msg)
-        else:
-            st.caption("Không có món ăn nào để xóa.")
+
+        with col_del:
+            st.subheader("Xóa Món Khỏi Menu")
+            if dishes_data:
+                del_id = st.selectbox("Chọn món xóa:", options=list(dishes_data.keys()), format_func=lambda x: f"{x} - {dishes_data[x].name}")
+                if st.button("Xóa Món", type="primary"):
+                    ok, msg = logic_delete_dish(del_id)
+                    if ok:
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)
