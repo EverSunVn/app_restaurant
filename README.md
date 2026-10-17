@@ -10,14 +10,33 @@ Dự án này là sản phẩm bài tập dự án thuộc chương 1  **AI DUT*
 *   **Người hướng dẫn (Mentor):**
     *   👑 **Thành Danh**
 *   **Các thành viên thực hiện dự án (Members):**
-    *   🧑‍💻 **Võ Dương** 
+    *   🧑‍💻 **Võ Nguyễn Đình Dương** 
     *   🧑‍💻 **Huỳnh Văn Trường** 
     *   🧑‍💻 **Thành Phát**
     *   🧑‍💻 **Đặng Tuấn Đạt**
 
 ---
+## 🛠️ Vai Trò
+### 1. Dương: Quản lý nhóm, phân vai trò cho mọi người, thiết kế kiến trúc hệ thống và dựng bố cục cấu trúc thư mục ban đầu dự án, xây dựng tầng dữ liệu cơ sở và chấp nhận pull request của mọi người
+### 2. Trường: Xử lý logic vận hành bàn ăn, đơn hàng, order và checkout
+### 3. Phát: Thiết kế kiến trúc hệ thống UI
+### 4. Đạt: Xây dựng tài liệu hướng dẫn sử dụng 
 ---
+## 📁 Cấu Trúc Thư Mục Chi Tiết
 
+```text
+├── controllers/          # Tầng điều hướng và xử lý logic tính toán
+│   ├── checkout_logic.py # Kiểm tra hóa đơn, xử lý dọn bàn và hoàn tất thu tiền
+│   ├── menu_logic.py     # Xử lý logic nghiệp vụ thêm, sửa, xóa món ăn
+│   ├── orders_logic.py   # Quản lý nạp món vào bill, tính tổng tiền và stack undo
+│   └── tables_logic.py   # Thay đổi trạng thái vật lý đóng/mở bàn ăn
+├── models/               # Tầng định nghĩa thực thể cấu trúc và dữ liệu hệ thống
+│   ├── base_models.py    # Định nghĩa Class OOP (Dishes, Table, Bill) và đọc JSON
+│   └── data.json         # Cơ sở dữ liệu gốc lưu trữ thông tin món ăn và bàn
+├── views/                # Tầng thiết kế giao diện người dùng (Streamlit UI)
+│   ├── tables.py | menu.py | orders.py | checkout.py 
+└── app.py                # Điểm khởi chạy (Entrypoint) dự án
+---
 ## 🛠️ Hướng Dẫn Cài Đặt (Installation)
 
 Hãy làm theo các bước sau để thiết lập môi trường và chạy thử nghiệm dự án:
