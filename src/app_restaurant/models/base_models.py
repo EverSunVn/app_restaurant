@@ -9,11 +9,7 @@ class Dishes:
     def __init__(self, name, cost):
         self.name = name
         self.cost = cost
-# thêm class mới         
-class OrderedDish:
-    def __init__(self, dish_object):
-        self.dish = dish_object                      # Lưu đối tượng Dishes gốc (có name, cost)
-        self.status = "đã được đặt"                  # 3 trạng thái: "đã được đặt", "đang chế biến", "chế biến xong"
+        
 
 class Table:
     def __init__(self, table_number ,state):
@@ -38,7 +34,7 @@ class Table:
 class Bill:
     def __init__(self, table_number):
         self.id = table_number
-        self.dishes_list = [] # danh sách chứa thêm các đối tượng OrderDish
+        self.dishes_list = []
         self.total_money = 0
 
 # =================
@@ -114,14 +110,3 @@ def get_bill(table_number): # Lấy Bill
         BILL_DATA[table_number] = Bill(table_number)
 
     return BILL_DATA[table_number]
-
-# thêm hành động cập nhập trạng thái món ăn
-def update_dish_status(table_number, dish_index, new_status):
-    """Cập nhật trạng thái của một món ăn cụ thể trong bàn thông qua vị trí (index) của nó"""
-    if table_number in BILL_DATA:
-        bill = BILL_DATA[table_number]
-        # Kiểm tra xem vị trí món ăn có hợp lệ trong danh sách không
-        if 0 <= dish_index < len(bill.dishes_list):
-            bill.dishes_list[dish_index].status = new_status
-            return True
-    return False
