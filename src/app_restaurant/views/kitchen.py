@@ -1,6 +1,21 @@
 import streamlit as st
 from app_restaurant.controllers.kitchen_logic import get_pending_orders
 
+# Cấu hình popup to lên bằng cách gán width="large"
+@st.dialog("👨‍🍳 Thông báo nhà bếp", width="large")
+def show_kitchen_dialog(message):
+    st.markdown(
+        f"""
+        <div style="text-align: center; padding: 20px 0;">
+            <div style="font-size: 70px; color: #4CAF50; margin-bottom: 10px;">✔️</div>
+            <h2 style="margin: 0 0 10px 0; color: #333333; font-weight: 600;">Hoàn thành món ăn!</h2>
+            <p style="color: #666666; font-size: 16px; margin-bottom: 25px;">{message}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    if st.button("OK", type="primary", use_container_width=True):
+        st.rerun()
 
 def render_kitchen_view():
     st.header("👨‍🍳 Quản Lý Nhà Bếp")
@@ -11,7 +26,6 @@ def render_kitchen_view():
         st.success("Hiện tại không có đơn hàng nào đang chờ.")
         return
 
-    # Gom các món theo bàn, giữ nguyên thứ tự bàn được gọi đầu tiên
     grouped_orders = {}
 
     for order in queue:
@@ -23,7 +37,6 @@ def render_kitchen_view():
 
         grouped_orders[table_number].append(dish_name)
 
-    # Hiển thị tổng số bàn và tổng số món
     total_tables = len(grouped_orders)
     total_dishes = len(queue)
 
@@ -37,11 +50,9 @@ def render_kitchen_view():
 
     st.markdown("---")
 
-    # Lấy bàn đầu tiên làm bàn đang thực hiện
     table_numbers = list(grouped_orders.keys())
     current_table = table_numbers[0]
 
-    # Hiển thị từng bàn
     for index, table_number in enumerate(table_numbers):
 
         dishes = grouped_orders[table_number]
@@ -66,13 +77,8 @@ def render_kitchen_view():
                     type="primary",
                     use_container_width=True
                 ):
-                    # Xóa toàn bộ món thuộc bàn vừa hoàn thành
                     queue[:] = [
                         order for order in queue
                         if order["table_number"] != table_number
                     ]
-
-                    st.success(
-                        f"Đã hoàn thành tất cả món của Bàn {table_number}!"
-                    )
-                    st.rerun()
+                    show_kitchen_dialog(f"Đã hoàn thành tất cả món ăn và chuẩn bị giao cho Bàn {table_number}!")
