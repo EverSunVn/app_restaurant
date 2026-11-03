@@ -1,6 +1,12 @@
 
 import streamlit as st
 
+from app_restaurant.models import base_models as BaseModel
+
+# Đảm bảo hàng đợi tồn tại trước khi import kitchen_logic
+if not hasattr(BaseModel, "KITCHEN_QUEUE"):
+    BaseModel.KITCHEN_QUEUE = []
+
 from app_restaurant.controllers.kitchen_logic import (
     get_pending_orders,
     complete_next_order
@@ -8,82 +14,113 @@ from app_restaurant.controllers.kitchen_logic import (
 
 
 def render_kitchen_view():
-    st.header("👨‍🍳 Quản Lý Nhà Bếp")
 
-    pending_orders = get_pending_orders()
+    # Tiêu đề và số lượng đơn hàng
+    col_title, col_count = st.columns([4, 1])
 
-    col1, col2 = st.columns(2)
+    with col_title:
+        st.header("👨‍🍳 QUẢN LÝ NHÀ BẾP")
 
-    with col1:
+    with col_count:
+        pending_orders = get_pending_orders()
+
         st.metric(
-            label="📋 Đơn hàng đang chờ",
+            label="Tổng đơn hàng",
             value=len(pending_orders)
         )
 
-    with col2:
+    st.markdown("---")
+
+    # Chia giao diện thành hai khu vực
+    col_doing, col_waiting = st.columns([1, 1])
+
+    # ==================================================
+    # ĐANG LÀM
+    # ==================================================
+
+    with col_doing:
+
+        st.subheader("🔥 ĐANG LÀM")
+
         if pending_orders:
-            st.metric(
-                label="⏳ Đơn hàng tiếp theo",
-                value="Bàn " + str(pending_orders[0]["table_number"])
-            )
+
+            # FIFO: Đơn đầu tiên luôn được ưu tiên chế biến
+            current_order = pending_orders[0]
+
+            with st.container(border=True):
+
+                st.markdown(
+                    f"### 🍽️ {current_order['dish_name']}"
+                )
+
+                st.markdown(
+                    f"**📍 Bàn số {current_order['table_number']}**"
+                )
+
+                st.caption("Đơn hàng được đặt sớm nhất")
+
+                st.markdown("---")
+
+                if st.button(
+                    "✅ XONG",
+                    key="complete_current_order",
+                    type="primary",
+                    use_container_width=True
+                ):
+
+                    success, message = complete_next_order()
+
+                    if success:
+                        st.success(message)
+                        st.rerun()
+                    else:
+                        st.error(message)
+
         else:
-            st.metric(
-                label="⏳ Đơn hàng tiếp theo",
-                value="Không có"
-            )
+
+            st.info("Hiện chưa có món nào đang chế biến.")
+
+    # ==================================================
+    # CHỜ LÀM
+    # ==================================================
+
+    with col_waiting:
+
+        st.subheader("⏳ CHỜ LÀM")
+
+        # Bỏ qua đơn đầu tiên vì nó đang được chế biến
+        waiting_orders = pending_orders[1:]
+
+        if waiting_orders:
+
+            for index, order in enumerate(waiting_orders):
+
+                with st.container(border=True):
+
+                    st.markdown(
+                        f"**🍽️ {order['dish_name']}**"
+                    )
+
+                    st.markdown(
+                        f"📍 Bàn số {order['table_number']}"
+                    )
+
+                    st.caption(
+                        f"Vị trí chờ: {index + 1}"
+                    )
+
+        else:
+
+            st.info("Không có đơn hàng nào đang chờ.")
+
+    # ==================================================
+    # LÀM MỚI
+    # ==================================================
 
     st.markdown("---")
-
-    st.subheader("🍳 Danh Sách Món Cần Chế Biến")
-
-    if not pending_orders:
-        st.info("Hiện tại không có món ăn nào cần chế biến.")
-        return
-    
-    for index, order in enumerate(pending_orders):
-
-        table_number = order["table_number"]
-        dish_name = order["dish_name"]
-
-        with st.container(border=True):
-
-            col1, col2, col3 = st.columns([1, 3, 1])
-
-            with col1:
-                st.subheader(f"#{index + 1}")
-
-            with col2:
-                st.markdown(f"**🍽️ {dish_name}**")
-                st.caption(f"📍 Bàn số {table_number}")
-
-                if index == 0:
-                    st.success("Đơn hàng tiếp theo cần chế biến")
-                else:
-                    st.caption("Đang chờ chế biến")
-
-            with col3:
-                if index == 0:
-                    st.markdown("### 🔥")
-                else:
-                    st.markdown("### ⏳")
-
-    st.markdown("---")
-
-    st.subheader("✅ Xử Lý Đơn Hàng")
 
     if st.button(
-        "Hoàn Thành Món Tiếp Theo",
-        type="primary",
+        "🔄 Làm mới danh sách",
         use_container_width=True
     ):
-
-        success, message = complete_next_order()
-
-        if success:
-            st.success(message)
-            st.rerun()
-        else:
-            st.error(message)
-
-    if st.button("🔄 Làm Mới Danh Sách", use_container_width=True):
         st.rerun()
