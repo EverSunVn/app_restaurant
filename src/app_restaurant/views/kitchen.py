@@ -3,7 +3,6 @@ import streamlit as st
 
 from app_restaurant.models import base_models as BaseModel
 
-# Đảm bảo hàng đợi tồn tại trước khi import kitchen_logic
 if not hasattr(BaseModel, "KITCHEN_QUEUE"):
     BaseModel.KITCHEN_QUEUE = []
 
@@ -15,28 +14,26 @@ from app_restaurant.controllers.kitchen_logic import (
 
 def render_kitchen_view():
 
-    # Tiêu đề và số lượng đơn hàng
+    pending_orders = get_pending_orders()
+
     col_title, col_count = st.columns([4, 1])
 
     with col_title:
         st.header("👨‍🍳 QUẢN LÝ NHÀ BẾP")
 
     with col_count:
-        pending_orders = get_pending_orders()
-
         st.metric(
-            label="Tổng đơn hàng",
-            value=len(pending_orders)
+            "Tổng đơn hàng",
+            len(pending_orders)
         )
 
     st.markdown("---")
 
-    # Chia giao diện thành hai khu vực
-    col_doing, col_waiting = st.columns([1, 1])
+    col_doing, col_waiting = st.columns(2)
 
-    # ==================================================
+    # ==========================================
     # ĐANG LÀM
-    # ==================================================
+    # ==========================================
 
     with col_doing:
 
@@ -44,7 +41,6 @@ def render_kitchen_view():
 
         if pending_orders:
 
-            # FIFO: Đơn đầu tiên luôn được ưu tiên chế biến
             current_order = pending_orders[0]
 
             with st.container(border=True):
@@ -57,9 +53,7 @@ def render_kitchen_view():
                     f"**📍 Bàn số {current_order['table_number']}**"
                 )
 
-                st.caption("Đơn hàng được đặt sớm nhất")
-
-                st.markdown("---")
+                st.caption("Ưu tiên chế biến trước")
 
                 if st.button(
                     "✅ XONG",
@@ -77,18 +71,16 @@ def render_kitchen_view():
                         st.error(message)
 
         else:
+            st.info("Chưa có món nào đang chế biến.")
 
-            st.info("Hiện chưa có món nào đang chế biến.")
-
-    # ==================================================
+    # ==========================================
     # CHỜ LÀM
-    # ==================================================
+    # ==========================================
 
     with col_waiting:
 
         st.subheader("⏳ CHỜ LÀM")
 
-        # Bỏ qua đơn đầu tiên vì nó đang được chế biến
         waiting_orders = pending_orders[1:]
 
         if waiting_orders:
@@ -110,12 +102,11 @@ def render_kitchen_view():
                     )
 
         else:
+            st.info("Không có đơn hàng đang chờ.")
 
-            st.info("Không có đơn hàng nào đang chờ.")
-
-    # ==================================================
+    # ==========================================
     # LÀM MỚI
-    # ==================================================
+    # ==========================================
 
     st.markdown("---")
 

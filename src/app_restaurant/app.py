@@ -31,9 +31,6 @@ st.set_page_config(
 # 3. KHỞI TẠO KITCHEN QUEUE
 # ==================================================
 
-# Phải khởi tạo trước khi import orders_logic
-# vì orders_logic có import kitchen_logic
-
 from app_restaurant.models import base_models as BaseModel
 
 if not hasattr(BaseModel, "KITCHEN_QUEUE"):
@@ -41,7 +38,7 @@ if not hasattr(BaseModel, "KITCHEN_QUEUE"):
 
 
 # ==================================================
-# 4. IMPORT CÁC GIAO DIỆN
+# 4. IMPORT CÁC MODULE
 # ==================================================
 
 from app_restaurant.views.tables import render_tables_view
@@ -53,31 +50,31 @@ from app_restaurant.views.kitchen import render_kitchen_view
 from app_restaurant.views import orders as orders_view
 
 from app_restaurant.controllers import kitchen_logic
+from app_restaurant.controllers import orders_logic
 
 
 # ==================================================
 # 5. KẾT NỐI ORDERS VỚI KITCHEN
 # ==================================================
 
-# Lưu hàm process_order gốc
-_original_process_order = orders_view.process_order
-
+# Luôn lấy hàm gốc trực tiếp từ orders_logic
+# Không lấy từ orders_view.process_order vì đây có thể
+# là wrapper của lần chạy Streamlit trước.
 
 def process_order_and_send_to_kitchen(table_number, dish_id):
 
-    # Bước 1: Xử lý gọi món
-    success, message = _original_process_order(
+    # Bước 1: Xử lý gọi món bằng logic gốc
+    success, message = orders_logic.process_order(
         table_number,
         dish_id
     )
 
-    # Bước 2: Nếu gọi món thành công, chuyển vào bếp
+    # Bước 2: Chỉ gửi vào bếp đúng một lần nếu thành công
     if success:
 
         dish = BaseModel.get_dish(dish_id)
 
         if dish is not None:
-
             kitchen_logic.add_order_to_queue(
                 table_number,
                 dish
@@ -86,20 +83,17 @@ def process_order_and_send_to_kitchen(table_number, dish_id):
     return success, message
 
 
-# Thay hàm process_order được sử dụng trong orders.py
-# Không chỉnh sửa file orders.py
+# Gắn wrapper vào giao diện Orders
 orders_view.process_order = process_order_and_send_to_kitchen
 
 
 # ==================================================
-# 6. TIÊU ĐỀ ỨNG DỤNG
+# 6. TIÊU ĐỀ
 # ==================================================
 
 st.title("🍔 HỆ THỐNG QUẢN LÝ NHÀ HÀNG")
 
-st.caption(
-    "Restaurant Management System - F&B"
-)
+st.caption("Restaurant Management System - F&B")
 
 
 # ==================================================
@@ -116,24 +110,20 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 
 
 # ==================================================
-# 8. HIỂN THỊ CÁC GIAO DIỆN
+# 8. HIỂN THỊ GIAO DIỆN
 # ==================================================
 
 with tab1:
     render_tables_view()
 
-
 with tab2:
     render_menu_view()
-
 
 with tab3:
     render_orders_view()
 
-
 with tab4:
     render_checkout_view()
-
 
 with tab5:
     render_kitchen_view()
