@@ -25,24 +25,34 @@ def render_orders_view():
     col_left, col_right = st.columns([1, 1])
 
     # CỘT TẠO ĐƠN (GỌI MÓN)
+    # Chỉnh sửa tính năng hiện danh sách thực đơn
     with col_left:
-        st.subheader("🛒 Chọn Món Bổ Sung")
+        st.subheader("🛒 Danh Sách Thực Đơn")
         if not DISHES_DATA:
             st.warning("Menu hiện chưa có món nào!")
         else:
-            dish_id = st.selectbox(
-                "Thực đơn món ăn:",
-                options=list(DISHES_DATA.keys()),
-                format_func=lambda k: f"{DISHES_DATA[k].name} - {DISHES_DATA[k].cost:,} VNĐ"
-            )
-
-            if st.button("➕ Thêm vào đơn hàng", use_container_width=True, type="primary"):
-                success, msg = process_order(selected_table, dish_id)
-                if success:
-                    st.success(msg)
-                    st.rerun()
-                else:
-                    st.error(msg)
+            st.caption("Bấm nút ➕ bên cạnh món ăn để thêm trực tiếp vào đơn hàng:")
+            
+            # Duyệt qua từng món ăn đang có trong hệ thống dữ liệu
+            for dish_id, dish in DISHES_DATA.items():
+                # Tạo một container nhỏ dạng thẻ 
+                with st.container(border=True):
+                    # Chia không gian thẻ làm 2 cột: Cột trái hiện tên và giá, cột phải đặt nút bấm
+                    col_item_info, col_item_btn = st.columns([3, 1])
+                    
+                    with col_item_info:
+                        st.markdown(f"**{dish.name}**")
+                        st.markdown(f"Giá: `{dish.cost:,}` VNĐ")
+                        
+                    with col_item_btn:
+                        # Mỗi nút bấm cần một key khác nhau để không bị trùng lặp
+                        if st.button("➕ Thêm", key=f"add_btn_{dish_id}", use_container_width=True, type="primary"):
+                            success, msg = process_order(selected_table, dish_id)
+                            if success:
+                                st.success(msg)
+                                st.rerun()
+                            else:
+                                st.error(msg)
 
     # CỘT HÓA ĐƠN TẠM TÍNH & NÚT UNDO
     with col_right:
