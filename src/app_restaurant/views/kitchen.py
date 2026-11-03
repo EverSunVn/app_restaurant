@@ -1,117 +1,78 @@
-
 import streamlit as st
-
-from app_restaurant.models import base_models as BaseModel
-
-if not hasattr(BaseModel, "KITCHEN_QUEUE"):
-    BaseModel.KITCHEN_QUEUE = []
-
-from app_restaurant.controllers.kitchen_logic import (
-    get_pending_orders,
-    complete_next_order
-)
+from app_restaurant.controllers.kitchen_logic import get_pending_orders
 
 
 def render_kitchen_view():
+    st.header("👨‍🍳 Quản Lý Nhà Bếp")
 
-    pending_orders = get_pending_orders()
+    queue = get_pending_orders()
 
-    col_title, col_count = st.columns([4, 1])
+    if not queue:
+        st.success("Hiện tại không có đơn hàng nào đang chờ.")
+        return
 
-    with col_title:
-        st.header("👨‍🍳 QUẢN LÝ NHÀ BẾP")
+    # Gom các món theo bàn, giữ nguyên thứ tự bàn được gọi đầu tiên
+    grouped_orders = {}
 
-    with col_count:
-        st.metric(
-            "Tổng đơn hàng",
-            len(pending_orders)
-        )
+    for order in queue:
+        table_number = order["table_number"]
+        dish_name = order["dish_name"]
+
+        if table_number not in grouped_orders:
+            grouped_orders[table_number] = []
+
+        grouped_orders[table_number].append(dish_name)
+
+    # Hiển thị tổng số bàn và tổng số món
+    total_tables = len(grouped_orders)
+    total_dishes = len(queue)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("Số bàn đang chờ", total_tables)
+
+    with col2:
+        st.metric("Tổng số món", total_dishes)
 
     st.markdown("---")
 
-    col_doing, col_waiting = st.columns(2)
+    # Lấy bàn đầu tiên làm bàn đang thực hiện
+    table_numbers = list(grouped_orders.keys())
+    current_table = table_numbers[0]
 
-    # ==========================================
-    # ĐANG LÀM
-    # ==========================================
+    # Hiển thị từng bàn
+    for index, table_number in enumerate(table_numbers):
 
-    with col_doing:
+        dishes = grouped_orders[table_number]
+        is_current = index == 0
 
-        st.subheader("🔥 ĐANG LÀM")
+        with st.container(border=True):
 
-        if pending_orders:
+            if is_current:
+                st.subheader(f"🔥 ĐANG LÀM - BÀN {table_number}")
+            else:
+                st.subheader(f"⏳ CHỜ LÀM - BÀN {table_number}")
 
-            current_order = pending_orders[0]
+            st.caption(f"Tổng cộng: {len(dishes)} món")
 
-            with st.container(border=True):
+            for dish_index, dish_name in enumerate(dishes, start=1):
+                st.write(f"{dish_index}. {dish_name}")
 
-                st.markdown(
-                    f"### 🍽️ {current_order['dish_name']}"
-                )
-
-                st.markdown(
-                    f"**📍 Bàn số {current_order['table_number']}**"
-                )
-
-                st.caption("Ưu tiên chế biến trước")
-
+            if is_current:
                 if st.button(
-                    "✅ XONG",
-                    key="complete_current_order",
+                    f"✅ HOÀN THÀNH BÀN {table_number}",
+                    key=f"complete_table_{table_number}",
                     type="primary",
                     use_container_width=True
                 ):
+                    # Xóa toàn bộ món thuộc bàn vừa hoàn thành
+                    queue[:] = [
+                        order for order in queue
+                        if order["table_number"] != table_number
+                    ]
 
-                    success, message = complete_next_order()
-
-                    if success:
-                        st.success(message)
-                        st.rerun()
-                    else:
-                        st.error(message)
-
-        else:
-            st.info("Chưa có món nào đang chế biến.")
-
-    # ==========================================
-    # CHỜ LÀM
-    # ==========================================
-
-    with col_waiting:
-
-        st.subheader("⏳ CHỜ LÀM")
-
-        waiting_orders = pending_orders[1:]
-
-        if waiting_orders:
-
-            for index, order in enumerate(waiting_orders):
-
-                with st.container(border=True):
-
-                    st.markdown(
-                        f"**🍽️ {order['dish_name']}**"
+                    st.success(
+                        f"Đã hoàn thành tất cả món của Bàn {table_number}!"
                     )
-
-                    st.markdown(
-                        f"📍 Bàn số {order['table_number']}"
-                    )
-
-                    st.caption(
-                        f"Vị trí chờ: {index + 1}"
-                    )
-
-        else:
-            st.info("Không có đơn hàng đang chờ.")
-
-    # ==========================================
-    # LÀM MỚI
-    # ==========================================
-
-    st.markdown("---")
-
-    if st.button(
-        "🔄 Làm mới danh sách",
-        use_container_width=True
-    ):
-        st.rerun()
+                    st.rerun()
