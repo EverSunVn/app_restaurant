@@ -1,0 +1,80 @@
+import streamlit as st
+from app_restaurant.models.base_models import DISHES_DATA
+from app_restaurant.controllers.tables_logic import get_table_layout
+from app_restaurant.controllers.orders_logic import process_order, undo_process, get_bill_details
+
+# ... (phần code def render_orders_view() giữ nguyên)
+def render_orders_view():
+    st.header("📝 Gọi Món & Quản Lý Đơn Hàng")
+
+    # Lấy danh sách bàn đang phục vụ (occupied_tables)
+    _, occupied_tables = get_table_layout()
+
+    if not occupied_tables:
+        st.info("Hiện không có bàn nào đang được mở. Vui lòng sang tab 'Sơ đồ Bàn' để mở bàn trước.")
+        return
+
+    # Chọn bàn thao tác
+    selected_table = st.selectbox(
+        "Chọn bàn cần gọi món:",
+        options=occupied_tables,
+        format_func=lambda x: f"Bàn số {x}"
+    )
+
+    st.markdown("---")
+    col_left, col_right = st.columns([1, 1])
+
+    # CỘT TẠO ĐƠN (GỌI MÓN)
+    # Chỉnh sửa tính năng hiện danh sách thực đơn
+    with col_left:
+        st.subheader("🛒 Danh Sách Thực Đơn")
+        if not DISHES_DATA:
+            st.warning("Menu hiện chưa có món nào!")
+        else:
+            st.caption("Bấm nút ➕ bên cạnh món ăn để thêm trực tiếp vào đơn hàng:")
+            
+            # Duyệt qua từng món ăn đang có trong hệ thống dữ liệu
+            for dish_id, dish in DISHES_DATA.items():
+                # Tạo một container nhỏ dạng thẻ 
+                with st.container(border=True):
+                    # Chia không gian thẻ làm 2 cột: Cột trái hiện tên và giá, cột phải đặt nút bấm
+                    col_item_info, col_item_btn = st.columns([3, 1])
+                    
+                    with col_item_info:
+                        st.markdown(f"**{dish.name}**")
+                        st.markdown(f"Giá: `{dish.cost:,}` VNĐ")
+                        
+                    with col_item_btn:
+                        # Mỗi nút bấm cần một key khác nhau để không bị trùng lặp
+                        if st.button("➕ Thêm", key=f"add_btn_{dish_id}", use_container_width=True, type="primary"):
+                            success, msg = process_order(selected_table, dish_id)
+                            if success:
+                                st.success(msg)
+                                st.rerun()
+                            else:
+                                st.error(msg)
+
+    # CỘT HÓA ĐƠN TẠM TÍNH & NÚT UNDO
+    with col_right:
+        st.subheader(f"🧾 Danh Sách Món - Bàn {selected_table}")
+        dishes_list, total_money = get_bill_details(selected_table)
+
+        if dishes_list:
+            # Hiển thị danh sách món ăn đã gọi
+            items_display = [
+                {"STT": idx + 1, "Món ăn": d.name, "Giá": f"{d.cost:,} VNĐ"}
+                for idx, d in enumerate(dishes_list)
+            ]
+            st.table(items_display)
+            st.markdown(f"### 💰 **Tổng tạm tính:** `{total_money:,}` VNĐ")
+
+            # Nút Undo (Rút món vừa chọn khỏi Stack)
+            if st.button("⏪ Undo (Xóa món vừa thêm gần nhất)", use_container_width=True):
+                success, msg = undo_process(selected_table)
+                if success:
+                    st.warning(msg)
+                    st.rerun()
+                else:
+                    st.error(msg)
+        else:
+            st.caption("Bàn này chưa gọi món nào.")
