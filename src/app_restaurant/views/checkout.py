@@ -3,12 +3,6 @@ from app_restaurant.models.base_models import Table, TABLE_DATA
 from app_restaurant.controllers.tables_logic import get_table_layout
 from app_restaurant.controllers.checkout_logic import logic_get_checkout_info, logic_process_checkout
 
-# ==============================================================================
-# MONKEY PATCH (XỬ LÝ THUẦN UI):
-# Tự động gắn thuộc tính 'id' cho Class Table và các object Table trên RAM.
-# Giúp checkout_logic.py gọi table.id không bị văng lỗi AttributeError
-# mà KHÔNG CẦN CHỈNH SỬA BẤT KỲ FILE LOGIC NÀO CỦA TEAM.
-# ==============================================================================
 if not hasattr(Table, 'id'):
     Table.id = property(lambda self: getattr(self, 'table_number', getattr(self, '_table_number', None)))
 
@@ -16,6 +10,22 @@ for t in TABLE_DATA.values():
     if not hasattr(t, 'id'):
         setattr(t, 'id', getattr(t, 'table_number', getattr(t, '_table_number', None)))
 
+# Cấu hình popup to lên bằng cách gán width="large"
+@st.dialog("💳 Hóa đơn điện tử", width="large")
+def show_checkout_dialog(message):
+    st.balloons()
+    st.markdown(
+        f"""
+        <div style="text-align: center; padding: 20px 0;">
+            <div style="font-size: 70px; color: #4CAF50; margin-bottom: 10px;">✔️</div>
+            <h2 style="margin: 0 0 10px 0; color: #333333; font-weight: 600;">Thanh toán thành công!</h2>
+            <p style="color: #666666; font-size: 16px; margin-bottom: 25px;">{message}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    if st.button("OK", type="primary", use_container_width=True):
+        st.rerun()
 
 def render_checkout_view():
     st.header("💳 Thanh Toán & In Hóa Đơn")
@@ -32,12 +42,10 @@ def render_checkout_view():
         format_func=lambda x: f"Bàn số {x}"
     )
 
-    # Đảm bảo object của bàn được chọn có sẵn thuộc tính id
     target_table = TABLE_DATA.get(selected_table)
     if target_table and not hasattr(target_table, 'id'):
         setattr(target_table, 'id', selected_table)
 
-    # Gọi logic kiểm tra hóa đơn từ controller
     try:
         success, msg, dishes_list, total_money = logic_get_checkout_info(selected_table)
     except Exception as e:
@@ -69,9 +77,7 @@ def render_checkout_view():
         try:
             ok, res_msg = logic_process_checkout(selected_table)
             if ok:
-                st.balloons()
-                st.success(res_msg)
-                st.rerun()
+                show_checkout_dialog(res_msg)
             else:
                 st.error(res_msg)
         except Exception as e:
