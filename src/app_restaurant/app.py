@@ -1,15 +1,3 @@
-<<<<<<< HEAD
-import os
-import sys
-import streamlit as st
-
-# 1. TRỌNG TÂM: Lùi đường dẫn ra ngoài thư mục 'src' thay vì đứng ở 'app_restaurant'
-src_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
-
-# 2. Bây giờ import mọi thứ phải bắt đầu bằng chữ "app_restaurant."
-=======
 
 import os
 import sys
@@ -53,25 +41,10 @@ if not hasattr(BaseModel, "KITCHEN_QUEUE"):
 # 4. IMPORT CÁC MODULE
 # ==================================================
 
->>>>>>> Ui/Dat
 from app_restaurant.views.tables import render_tables_view
 from app_restaurant.views.menu import render_menu_view
 from app_restaurant.views.orders import render_orders_view
 from app_restaurant.views.checkout import render_checkout_view
-<<<<<<< HEAD
-
-# ----- PHẦN UI DƯỚI NÀY GIỮ NGUYÊN -----
-st.set_page_config(page_title="F&B Management App", layout="wide", page_icon="🍔")
-st.title("🍔 Hệ Thống Quản Lý Nhà Hàng")
-
-tab1, tab2, tab3, tab4 = st.tabs([
-    "🪑 Sơ Đồ Bàn", 
-    "📜 Thực Đơn", 
-    "📝 Gọi Món (Orders)", 
-    "💳 Thanh Toán (Checkout)"
-])
-
-=======
 from app_restaurant.views.kitchen import render_kitchen_view
 
 from app_restaurant.views import orders as orders_view
@@ -140,7 +113,6 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # 8. HIỂN THỊ GIAO DIỆN
 # ==================================================
 
->>>>>>> Ui/Dat
 with tab1:
     render_tables_view()
 
@@ -152,9 +124,6 @@ with tab3:
 
 with tab4:
     render_checkout_view()
-<<<<<<< HEAD
-=======
 
 with tab5:
     render_kitchen_view()
->>>>>>> Ui/Dat
