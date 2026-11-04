@@ -31,4 +31,4 @@ def logic_process_checkout(table_number):
     # Close the table (This function in base_models.py sets state to True and deletes the bill)
     BaseModel.close_table(table_number)
     
-    return True, f"Checkout successful! Total paid: {final_total}."
+    return True, f"Checkout successful! Total paid: {final_total}." 
