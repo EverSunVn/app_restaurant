@@ -1,5 +1,5 @@
 from ..models import base_models as BaseModel
-from ..controllers.kitchen_logic import add_order_to_queue
+from ..controllers.kitchen_logic import add_order_to_queue, remove_order_from_queue
 
 def get_menu():
     return list(BaseModel.DISHES_DATA.values())
@@ -35,6 +35,8 @@ def undo_process(table_number):
     pop_dish = bill.dishes_list.pop() 
     
     bill.total_money -= pop_dish.cost
+
+    remove_order_from_queue(table_number, pop_dish.name)
     
     return True, f"Succesfully removed dish: {pop_dish.name}"
 

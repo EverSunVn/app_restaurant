@@ -32,3 +32,19 @@ def complete_next_order():
     dish_name = completed_order["dish_name"]
     
     return True, f"Chef completed: {dish_name} for Table {table_num}!"
+
+def remove_order_from_queue(table_number, dish_name):
+    """
+    Xóa món ăn vừa bị Undo khỏi hàng đợi của nhà bếp.
+    Tìm ngược từ cuối danh sách lên để xóa đúng món vừa thêm sau cùng.
+    """
+
+    for i in range(len(KITCHEN_QUEUE) - 1, -1, -1):
+        order = KITCHEN_QUEUE[i]
+        
+        # Nếu tìm thấy đúng bàn và đúng tên món
+        if order["table_number"] == table_number and order["dish_name"] == dish_name:
+            KITCHEN_QUEUE.pop(i) # Xóa phần tử tại vị trí i
+            return True
+            
+    return False 
